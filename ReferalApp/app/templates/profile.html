@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="title">
+                <h2>Профиль</h2>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4">
+            <div class="block-info">
+                <p>Телефон: {{ user.telephone }}</p>
+                <p>Личный инвайт-код: {{ user.personal_invite }}</p>
+                {% if not user.telephone_invait %}
+                    <p>Инвайт не активирован</p>
+                {% else %}
+                    <p>Активированный инвайт пользователя: {{ user.telephone_invait }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="user-invait">
+                <form id="invait-send" action="{% url 'profile_view' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="invait" name="invait" placeholder="Введите инвайт код другого пользователя">
+                    </div>
+                    <p id = "message-log"></p>
+                    <button type="submit" class="btn btn-primary">Активировать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+    $('#invait-send').submit(function(e){
+        e.preventDefault();
+        var invaitValue = $('#invait').val();
+        var csrftoken = getCookie('csrftoken');
+        var formData = {
+            'invait': invaitValue,
+            'csrfmiddlewaretoken': csrftoken
+        };
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),
+            data: formData,
+            success: function(response){
+                $('#message-log').text(response.message);
+            },
+            error: function(){
+                alert('Ошибка при записи!');
+            }
+        });
+    });
+});
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

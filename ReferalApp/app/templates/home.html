@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Auth{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="title-block text-center">
+                <p style="font-size: 20px; font-weight: 400;">Блок авторизации</p>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-3">
+            <div class="block-auth mx-auto text-center">
+                <form id="phone-form" action="{% url 'home_view' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="tel" name="tel" placeholder="Введите номер телефона">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Авторизация</button>
+                </form>
+
+                <form id="confirmation-cod" action="{% url 'home_view' %}" method="post" style="display: none;">
+                    {% csrf_token %}
+                    <div class="form-group" id="show-block-invaite">
+                        <div class="block-cod" style="display: inline-flex;">
+                            <p>Код для авторизации:</p>
+                            <p id="cod"></p>
+                        </div>
+                        <input type="text" class="form-control" id="auth_cod" name="auth_cod" placeholder="Введите код">
+                    </div>
+                    <div class="error-log">
+                        <p id="error-cod"></p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Подвердить код</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+    var telephone = "";
+    var cod = "";
+
+    $('#phone-form').submit(function(e){
+        e.preventDefault();
+        var telValue = $('#tel').val();
+        var csrftoken = getCookie('csrftoken');
+        var formData = {
+            'tel': telValue,
+            'formType': 'phoneForm',
+            'csrfmiddlewaretoken': csrftoken
+        };
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),
+            data: formData,
+            success: function(response){
+                telephone = telValue;
+                cod = response.cod;
+                $('#phone-form').css('display', 'none');
+                $('#confirmation-cod').css('display', 'inline');
+                $('#cod').text(response.cod);
+
+                if (response.auth) {
+                    window.location.href = '/profile';
+                }
+            },
+            error: function(){
+                alert('Ошибка при авторизации!');
+            }
+        });
+    });
+
+    $('#confirmation-cod').submit(function(e){
+        e.preventDefault();
+        var authCod = $('#auth_cod').val();
+        var csrftoken = getCookie('csrftoken');
+        var formData = {
+            'auth_cod': authCod,
+            'telephone': telephone,
+            'formType': 'confirmationForm',
+            'csrfmiddlewaretoken': csrftoken
+        };
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),
+            data: formData,
+            success: function(response){
+                if(response.error) {
+                    $('#error-cod').text(response.error);
+                }
+                else {
+                    window.location.href = '/profile';
+                }
+            },
+            error: function(){
+            }
+        });
+    });
+});
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
